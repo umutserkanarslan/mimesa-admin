@@ -3,13 +3,17 @@
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	const item = data.item;
+	const item = $derived(data.item);
 
 	let saving = $state(false);
 	let deleting = $state(false);
 
 	const flagOptions = ['signature', 'vegan', 'vegetarian', 'spicy', 'gluten-free'];
-	let selectedFlags = $state<string[]>([...item.flags]);
+	let selectedFlags = $state<string[]>([]);
+
+	$effect(() => {
+		selectedFlags = [...item.flags];
+	});
 
 	function toggleFlag(f: string) {
 		selectedFlags = selectedFlags.includes(f)

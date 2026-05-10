@@ -4,7 +4,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const c = data.category;
+	const c = $derived(data.category);
 	let saving = $state(false);
 </script>
 

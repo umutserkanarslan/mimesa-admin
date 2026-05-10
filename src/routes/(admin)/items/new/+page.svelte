@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { slugify } from '$lib/slug';
@@ -7,20 +8,33 @@
 
 	const f = $derived((form ?? {}) as Record<string, string | undefined> & { error?: string });
 
-	let nameTr = $state(f.name_tr ?? '');
-	let slug = $state(f.slug ?? '');
-	let slugTouched = $state(Boolean(f.slug));
+	let nameTr = $state('');
+	let slug = $state('');
+	let slugTouched = $state(false);
 
 	let saving = $state(false);
+
+	const flagOptions = ['signature', 'vegan', 'vegetarian', 'spicy', 'gluten-free'];
+	let selectedFlags = $state<string[]>([]);
+
+	// Hydrate from server-returned form fields after a failed submit
+	$effect(() => {
+		const ff = f;
+		untrack(() => {
+			if (ff.name_tr) nameTr = ff.name_tr;
+			if (ff.slug) {
+				slug = ff.slug;
+				slugTouched = true;
+			}
+			if (ff.flags) {
+				selectedFlags = ff.flags.split(',').map((s) => s.trim()).filter(Boolean);
+			}
+		});
+	});
 
 	$effect(() => {
 		if (!slugTouched) slug = slugify(nameTr);
 	});
-
-	const flagOptions = ['signature', 'vegan', 'vegetarian', 'spicy', 'gluten-free'];
-	let selectedFlags = $state<string[]>(
-		f.flags ? f.flags.split(',').map((s) => s.trim()).filter(Boolean) : []
-	);
 
 	function toggleFlag(f: string) {
 		selectedFlags = selectedFlags.includes(f)
