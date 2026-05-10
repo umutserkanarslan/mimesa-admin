@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
+	import TranslateButton from '$lib/components/TranslateButton.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const item = $derived(data.item);
@@ -8,10 +9,23 @@
 	let saving = $state(false);
 	let deleting = $state(false);
 
+	let nameTr = $state('');
+	let nameEn = $state('');
+	let nameAr = $state('');
+	let descriptionTr = $state('');
+	let descriptionEn = $state('');
+	let descriptionAr = $state('');
+
 	const flagOptions = ['signature', 'vegan', 'vegetarian', 'spicy', 'gluten-free'];
 	let selectedFlags = $state<string[]>([]);
 
 	$effect(() => {
+		nameTr = item.name.tr;
+		nameEn = item.name.en;
+		nameAr = item.name.ar;
+		descriptionTr = item.description.tr;
+		descriptionEn = item.description.en;
+		descriptionAr = item.description.ar;
 		selectedFlags = [...item.flags];
 	});
 
@@ -63,8 +77,8 @@
 				</div>
 			{/if}
 			<div class="flex-1">
-				<label class="label">Yeni görsel (opsiyonel)</label>
-				<input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif" class="input" />
+				<label class="label" for="image">Yeni görsel (opsiyonel)</label>
+				<input id="image" type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif" class="input" />
 			</div>
 		</div>
 	</section>
@@ -74,36 +88,48 @@
 		<h2 class="text-lg mb-4">Temel</h2>
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="label">Kategori *</label>
-				<select name="category_slug" required class="select">
+				<label class="label" for="category_slug">Kategori *</label>
+				<select id="category_slug" name="category_slug" required class="select">
 					{#each data.categories as c}
 						<option value={c.slug} selected={item.category_slug === c.slug}>{c.name.tr}</option>
 					{/each}
 				</select>
 			</div>
 			<div>
-				<label class="label">Slug</label>
-				<input value={item.slug} disabled class="input opacity-60" />
+				<label class="label" for="slug">Slug</label>
+				<input id="slug" value={item.slug} disabled class="input opacity-60" />
 				<p class="mt-1 text-xs text-[var(--color-muted)]">Slug değiştirilemez (URL stabilitesi için).</p>
 			</div>
 		</div>
 	</section>
+
+	<!-- Translate button -->
+	<TranslateButton
+		getInput={() => ({ name: nameTr, description: descriptionTr })}
+		onResult={(r) => {
+			if (r.en.name) nameEn = r.en.name;
+			if (r.ar.name) nameAr = r.ar.name;
+			if (r.en.description) descriptionEn = r.en.description;
+			if (r.ar.description) descriptionAr = r.ar.description;
+		}}
+		label="TR alanlarını EN ve AR'a çevir"
+	/>
 
 	<!-- Name -->
 	<section class="card p-6">
 		<h2 class="text-lg mb-4">Ad *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
-				<label class="label">TR</label>
-				<input name="name_tr" value={item.name.tr} required class="input" />
+				<label class="label" for="name_tr">TR</label>
+				<input id="name_tr" name="name_tr" bind:value={nameTr} required class="input" />
 			</div>
 			<div>
-				<label class="label">EN</label>
-				<input name="name_en" value={item.name.en} required class="input" />
+				<label class="label" for="name_en">EN</label>
+				<input id="name_en" name="name_en" bind:value={nameEn} required class="input" />
 			</div>
 			<div>
-				<label class="label">AR</label>
-				<input name="name_ar" value={item.name.ar} required class="input" dir="rtl" />
+				<label class="label" for="name_ar">AR</label>
+				<input id="name_ar" name="name_ar" bind:value={nameAr} required class="input" dir="rtl" />
 			</div>
 		</div>
 	</section>
@@ -113,16 +139,16 @@
 		<h2 class="text-lg mb-4">Açıklama *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
-				<label class="label">TR</label>
-				<textarea name="description_tr" rows="4" required class="textarea">{item.description.tr}</textarea>
+				<label class="label" for="description_tr">TR</label>
+				<textarea id="description_tr" name="description_tr" rows="4" required class="textarea" bind:value={descriptionTr}></textarea>
 			</div>
 			<div>
-				<label class="label">EN</label>
-				<textarea name="description_en" rows="4" required class="textarea">{item.description.en}</textarea>
+				<label class="label" for="description_en">EN</label>
+				<textarea id="description_en" name="description_en" rows="4" required class="textarea" bind:value={descriptionEn}></textarea>
 			</div>
 			<div>
-				<label class="label">AR</label>
-				<textarea name="description_ar" rows="4" required class="textarea" dir="rtl">{item.description.ar}</textarea>
+				<label class="label" for="description_ar">AR</label>
+				<textarea id="description_ar" name="description_ar" rows="4" required class="textarea" dir="rtl" bind:value={descriptionAr}></textarea>
 			</div>
 		</div>
 	</section>
@@ -132,26 +158,26 @@
 		<h2 class="text-lg mb-4">Fiyat ve etiketler</h2>
 		<div class="grid grid-cols-2 gap-6">
 			<div>
-				<label class="label">Fiyat (₺) *</label>
-				<input type="number" name="price" value={item.price} min="0" step="1" required class="input" />
+				<label class="label" for="price">Fiyat (₺) *</label>
+				<input id="price" type="number" name="price" value={item.price} min="0" step="1" required class="input" />
 			</div>
 			<div>
-				<label class="label">Sıralama</label>
-				<input type="number" name="sort_order" value={item.sort_order} class="input" />
+				<label class="label" for="sort_order">Sıralama</label>
+				<input id="sort_order" type="number" name="sort_order" value={item.sort_order} class="input" />
 			</div>
 		</div>
 
 		<div class="mt-5">
-			<label class="label">Etiketler</label>
+			<span class="label">Etiketler</span>
 			<div class="flex flex-wrap gap-2">
-				{#each flagOptions as f}
-					{@const active = selectedFlags.includes(f)}
+				{#each flagOptions as flag}
+					{@const active = selectedFlags.includes(flag)}
 					<button
 						type="button"
-						onclick={() => toggleFlag(f)}
+						onclick={() => toggleFlag(flag)}
 						class="badge {active ? 'badge-copper' : ''} cursor-pointer hover:border-[var(--color-copper)]"
 					>
-						{f}
+						{flag}
 					</button>
 				{/each}
 			</div>

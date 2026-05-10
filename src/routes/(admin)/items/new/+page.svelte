@@ -3,12 +3,18 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { slugify } from '$lib/slug';
+	import TranslateButton from '$lib/components/TranslateButton.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const f = $derived((form ?? {}) as Record<string, string | undefined> & { error?: string });
 
 	let nameTr = $state('');
+	let nameEn = $state('');
+	let nameAr = $state('');
+	let descriptionTr = $state('');
+	let descriptionEn = $state('');
+	let descriptionAr = $state('');
 	let slug = $state('');
 	let slugTouched = $state(false);
 
@@ -17,11 +23,16 @@
 	const flagOptions = ['signature', 'vegan', 'vegetarian', 'spicy', 'gluten-free'];
 	let selectedFlags = $state<string[]>([]);
 
-	// Hydrate from server-returned form fields after a failed submit
+	// Re-hydrate from server-returned form fields after a failed submit
 	$effect(() => {
 		const ff = f;
 		untrack(() => {
 			if (ff.name_tr) nameTr = ff.name_tr;
+			if (ff.name_en) nameEn = ff.name_en;
+			if (ff.name_ar) nameAr = ff.name_ar;
+			if (ff.description_tr) descriptionTr = ff.description_tr;
+			if (ff.description_en) descriptionEn = ff.description_en;
+			if (ff.description_ar) descriptionAr = ff.description_ar;
 			if (ff.slug) {
 				slug = ff.slug;
 				slugTouched = true;
@@ -36,10 +47,10 @@
 		if (!slugTouched) slug = slugify(nameTr);
 	});
 
-	function toggleFlag(f: string) {
-		selectedFlags = selectedFlags.includes(f)
-			? selectedFlags.filter((x) => x !== f)
-			: [...selectedFlags, f];
+	function toggleFlag(flag: string) {
+		selectedFlags = selectedFlags.includes(flag)
+			? selectedFlags.filter((x) => x !== flag)
+			: [...selectedFlags, flag];
 	}
 </script>
 
@@ -73,8 +84,8 @@
 		<h2 class="text-lg mb-4">Temel</h2>
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="label">Kategori *</label>
-				<select name="category_slug" required class="select">
+				<label class="label" for="category_slug">Kategori *</label>
+				<select id="category_slug" name="category_slug" required class="select">
 					<option value="">Seç…</option>
 					{#each data.categories as c}
 						<option
@@ -87,8 +98,9 @@
 				</select>
 			</div>
 			<div>
-				<label class="label">Slug *</label>
+				<label class="label" for="slug">Slug *</label>
 				<input
+					id="slug"
 					name="slug"
 					value={slug}
 					oninput={(e) => {
@@ -103,27 +115,33 @@
 		</div>
 	</section>
 
+	<!-- Translate button -->
+	<TranslateButton
+		getInput={() => ({ name: nameTr, description: descriptionTr })}
+		onResult={(r) => {
+			if (r.en.name) nameEn = r.en.name;
+			if (r.ar.name) nameAr = r.ar.name;
+			if (r.en.description) descriptionEn = r.en.description;
+			if (r.ar.description) descriptionAr = r.ar.description;
+		}}
+		label="TR alanlarını EN ve AR'a çevir"
+	/>
+
 	<!-- Name -->
 	<section class="card p-6">
 		<h2 class="text-lg mb-4">Ad *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
-				<label class="label">TR</label>
-				<input
-					name="name_tr"
-					value={nameTr}
-					oninput={(e) => (nameTr = (e.target as HTMLInputElement).value)}
-					required
-					class="input"
-				/>
+				<label class="label" for="name_tr">TR</label>
+				<input id="name_tr" name="name_tr" bind:value={nameTr} required class="input" />
 			</div>
 			<div>
-				<label class="label">EN</label>
-				<input name="name_en" value={(f.name_en as string) ?? ''} required class="input" />
+				<label class="label" for="name_en">EN</label>
+				<input id="name_en" name="name_en" bind:value={nameEn} required class="input" />
 			</div>
 			<div>
-				<label class="label">AR</label>
-				<input name="name_ar" value={(f.name_ar as string) ?? ''} required class="input" dir="rtl" />
+				<label class="label" for="name_ar">AR</label>
+				<input id="name_ar" name="name_ar" bind:value={nameAr} required class="input" dir="rtl" />
 			</div>
 		</div>
 	</section>
@@ -133,22 +151,16 @@
 		<h2 class="text-lg mb-4">Açıklama *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
-				<label class="label">TR</label>
-				<textarea name="description_tr" rows="4" required class="textarea"
-					>{(f.description_tr as string) ?? ''}</textarea
-				>
+				<label class="label" for="description_tr">TR</label>
+				<textarea id="description_tr" name="description_tr" rows="4" required class="textarea" bind:value={descriptionTr}></textarea>
 			</div>
 			<div>
-				<label class="label">EN</label>
-				<textarea name="description_en" rows="4" required class="textarea"
-					>{(f.description_en as string) ?? ''}</textarea
-				>
+				<label class="label" for="description_en">EN</label>
+				<textarea id="description_en" name="description_en" rows="4" required class="textarea" bind:value={descriptionEn}></textarea>
 			</div>
 			<div>
-				<label class="label">AR</label>
-				<textarea name="description_ar" rows="4" required class="textarea" dir="rtl"
-					>{(f.description_ar as string) ?? ''}</textarea
-				>
+				<label class="label" for="description_ar">AR</label>
+				<textarea id="description_ar" name="description_ar" rows="4" required class="textarea" dir="rtl" bind:value={descriptionAr}></textarea>
 			</div>
 		</div>
 	</section>
@@ -158,11 +170,12 @@
 		<h2 class="text-lg mb-4">Fiyat ve etiketler</h2>
 		<div class="grid grid-cols-2 gap-6">
 			<div>
-				<label class="label">Fiyat (₺) *</label>
+				<label class="label" for="price">Fiyat (₺) *</label>
 				<input
+					id="price"
 					type="number"
 					name="price"
-					value={(f.price as string) ?? ''}
+					value={f.price ?? ''}
 					min="0"
 					step="1"
 					required
@@ -170,13 +183,13 @@
 				/>
 			</div>
 			<div>
-				<label class="label">Sıralama</label>
-				<input type="number" name="sort_order" value="0" class="input" />
+				<label class="label" for="sort_order">Sıralama</label>
+				<input id="sort_order" type="number" name="sort_order" value="0" class="input" />
 			</div>
 		</div>
 
 		<div class="mt-5">
-			<label class="label">Etiketler</label>
+			<span class="label">Etiketler</span>
 			<div class="flex flex-wrap gap-2">
 				{#each flagOptions as flag}
 					{@const active = selectedFlags.includes(flag)}

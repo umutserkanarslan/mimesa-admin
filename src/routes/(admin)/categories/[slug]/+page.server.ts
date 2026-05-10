@@ -70,5 +70,27 @@ export const actions: Actions = {
 		if (dbError) return fail(500, { error: dbError.message });
 
 		throw redirect(303, '/categories');
+	},
+
+	delete: async ({ params, locals }) => {
+		// Refuse if any items reference this category
+		const { count, error: countError } = await locals.supabaseAdmin
+			.from('items')
+			.select('id', { count: 'exact', head: true })
+			.eq('category_slug', params.slug);
+		if (countError) return fail(500, { error: countError.message });
+		if ((count ?? 0) > 0) {
+			return fail(400, {
+				error: `Bu kategoride ${count} ürün var. Önce ürünleri taşı veya sil.`
+			});
+		}
+
+		const { error: dbError } = await locals.supabaseAdmin
+			.from('categories')
+			.delete()
+			.eq('slug', params.slug);
+		if (dbError) return fail(500, { error: dbError.message });
+
+		throw redirect(303, '/categories');
 	}
 };

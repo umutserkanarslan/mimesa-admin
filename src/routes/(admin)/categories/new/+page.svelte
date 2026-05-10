@@ -1,13 +1,13 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
+	import { slugify } from '$lib/slug';
 	import TranslateButton from '$lib/components/TranslateButton.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const c = $derived(data.category);
-	let saving = $state(false);
-	let deleting = $state(false);
+	const f = $derived((form ?? {}) as Record<string, string | undefined> & { error?: string });
 
 	let nameTr = $state('');
 	let nameEn = $state('');
@@ -18,33 +18,48 @@
 	let descriptionTr = $state('');
 	let descriptionEn = $state('');
 	let descriptionAr = $state('');
+	let slug = $state('');
+	let slugTouched = $state(false);
+
+	let saving = $state(false);
 
 	$effect(() => {
-		nameTr = c.name.tr;
-		nameEn = c.name.en;
-		nameAr = c.name.ar;
-		taglineTr = c.tagline.tr;
-		taglineEn = c.tagline.en;
-		taglineAr = c.tagline.ar;
-		descriptionTr = c.description.tr;
-		descriptionEn = c.description.en;
-		descriptionAr = c.description.ar;
+		const ff = f;
+		untrack(() => {
+			if (ff.name_tr) nameTr = ff.name_tr;
+			if (ff.name_en) nameEn = ff.name_en;
+			if (ff.name_ar) nameAr = ff.name_ar;
+			if (ff.tagline_tr) taglineTr = ff.tagline_tr;
+			if (ff.tagline_en) taglineEn = ff.tagline_en;
+			if (ff.tagline_ar) taglineAr = ff.tagline_ar;
+			if (ff.description_tr) descriptionTr = ff.description_tr;
+			if (ff.description_en) descriptionEn = ff.description_en;
+			if (ff.description_ar) descriptionAr = ff.description_ar;
+			if (ff.slug) {
+				slug = ff.slug;
+				slugTouched = true;
+			}
+		});
+	});
+
+	$effect(() => {
+		if (!slugTouched) slug = slugify(nameTr);
 	});
 </script>
 
 <svelte:head>
-	<title>{c.name.tr} · Mi Mesa Admin</title>
+	<title>Yeni kategori · Mi Mesa Admin</title>
 </svelte:head>
 
 <header class="px-10 py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
 	<a href="/categories" class="text-xs text-[var(--color-muted)] hover:text-[var(--color-copper)]">← Kategoriler</a>
-	<p class="eyebrow mt-3">Kategori · {c.slug}</p>
-	<h1 class="mt-1 text-3xl">{c.name.tr}</h1>
+	<p class="eyebrow mt-3">Yeni kategori</p>
+	<h1 class="mt-1 text-3xl">Menüye yeni bir başlık aç</h1>
 </header>
 
 <form
 	method="POST"
-	action="?/save"
+	action="?/create"
 	enctype="multipart/form-data"
 	use:enhance={() => {
 		saving = true;
@@ -58,31 +73,38 @@
 	<!-- Cover -->
 	<section class="card p-6">
 		<h2 class="text-lg mb-4">Kapak görseli</h2>
-		<div class="flex items-start gap-6">
-			{#if c.cover}
-				<img
-					src={c.cover}
-					alt="cover"
-					class="w-40 h-48 object-cover bg-[var(--color-champagne-soft)] flex-shrink-0"
+		<input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" class="input" />
+		<p class="mt-2 text-xs text-[var(--color-muted)]">Önerilen oran 4:5, max 8 MB. Boş bırakılırsa placeholder kullanılır.</p>
+	</section>
+
+	<!-- Slug + sort -->
+	<section class="card p-6">
+		<h2 class="text-lg mb-4">Temel</h2>
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="label" for="slug">Slug *</label>
+				<input
+					id="slug"
+					name="slug"
+					value={slug}
+					oninput={(e) => {
+						slug = (e.target as HTMLInputElement).value;
+						slugTouched = true;
+					}}
+					required
+					class="input"
 				/>
-			{:else}
-				<div
-					class="w-40 h-48 bg-[var(--color-champagne-soft)] flex items-center justify-center text-xs text-[var(--color-muted)] flex-shrink-0"
-				>
-					Görsel yok
-				</div>
-			{/if}
-			<div class="flex-1">
-				<label class="label" for="cover">Yeni görsel yükle (opsiyonel)</label>
-				<input id="cover" type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" class="input" />
-				<p class="mt-2 text-xs text-[var(--color-muted)]">
-					Önerilen oran 4:5, max 8 MB. Yüklersen mevcut görselin üzerine yazılır.
-				</p>
+				<p class="mt-1 text-xs text-[var(--color-muted)]">URL'de görünür. TR adından otomatik oluşur.</p>
+			</div>
+			<div>
+				<label class="label" for="sort_order">Sıralama</label>
+				<input id="sort_order" type="number" name="sort_order" value={data.nextSort} class="input" />
+				<p class="mt-1 text-xs text-[var(--color-muted)]">Düşük sayı önce görünür.</p>
 			</div>
 		</div>
 	</section>
 
-	<!-- Translate button -->
+	<!-- Translate -->
 	<TranslateButton
 		getInput={() => ({ name: nameTr, tagline: taglineTr, description: descriptionTr })}
 		onResult={(r) => {
@@ -98,7 +120,7 @@
 
 	<!-- Name -->
 	<section class="card p-6">
-		<h2 class="text-lg mb-4">Ad</h2>
+		<h2 class="text-lg mb-4">Ad *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="name_tr">TR</label>
@@ -117,7 +139,7 @@
 
 	<!-- Tagline -->
 	<section class="card p-6">
-		<h2 class="text-lg mb-4">Tagline (italik)</h2>
+		<h2 class="text-lg mb-4">Tagline (italik) *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="tagline_tr">TR</label>
@@ -136,7 +158,7 @@
 
 	<!-- Description -->
 	<section class="card p-6">
-		<h2 class="text-lg mb-4">Açıklama</h2>
+		<h2 class="text-lg mb-4">Açıklama *</h2>
 		<div class="grid grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="description_tr">TR</label>
@@ -153,16 +175,6 @@
 		</div>
 	</section>
 
-	<!-- Sort order -->
-	<section class="card p-6">
-		<h2 class="text-lg mb-4">Sıralama</h2>
-		<div class="max-w-xs">
-			<label class="label" for="sort_order">Sort order</label>
-			<input id="sort_order" type="number" name="sort_order" value={c.sort_order} class="input" />
-			<p class="mt-2 text-xs text-[var(--color-muted)]">Düşük sayı önce görünür.</p>
-		</div>
-	</section>
-
 	{#if form?.error}
 		<div class="card p-4 border-l-2 border-[var(--color-danger)]">
 			<p class="text-sm text-[var(--color-danger)]">{form.error}</p>
@@ -171,34 +183,8 @@
 
 	<div class="flex items-center gap-3">
 		<button type="submit" disabled={saving} class="btn btn-primary">
-			{saving ? 'Kaydediliyor…' : 'Kaydet'}
+			{saving ? 'Kaydediliyor…' : 'Kategori oluştur'}
 		</button>
 		<a href="/categories" class="btn btn-secondary">İptal</a>
-	</div>
-</form>
-
-<!-- Delete (separate form) -->
-<form
-	method="POST"
-	action="?/delete"
-	use:enhance={({ cancel }) => {
-		if (!confirm(`"${c.name.tr}" kategorisi silinsin mi? İçinde ürün varsa engellenir.`)) {
-			cancel();
-			return;
-		}
-		deleting = true;
-		return async ({ update }) => {
-			await update();
-			deleting = false;
-		};
-	}}
-	class="px-10 pb-12 max-w-4xl"
->
-	<div class="card p-6 border-l-2 border-[var(--color-danger)]">
-		<h3 class="text-sm">Tehlikeli bölge</h3>
-		<p class="text-xs text-[var(--color-muted)] mt-1">Boş bir kategoriyi kalıcı olarak siler. İçinde ürün varsa silinemez.</p>
-		<button type="submit" disabled={deleting} class="btn btn-danger mt-4">
-			{deleting ? 'Siliniyor…' : 'Kategoriyi sil'}
-		</button>
 	</div>
 </form>

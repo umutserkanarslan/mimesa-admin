@@ -8,11 +8,16 @@
 </svelte:head>
 
 <header class="px-10 py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-	<p class="eyebrow">Kategoriler</p>
-	<h1 class="mt-2 text-3xl">Menünün omurgası</h1>
-	<p class="mt-3 text-sm text-[var(--color-muted)] max-w-xl">
-		Kategoriler, ürünleri gruplamak için kullanılır. Bir kategoriye tıklayarak adını, açıklamasını ve kapak görselini düzenleyebilirsin.
-	</p>
+	<div class="flex items-end justify-between gap-4 flex-wrap">
+		<div>
+			<p class="eyebrow">Kategoriler</p>
+			<h1 class="mt-2 text-3xl">Menünün omurgası</h1>
+			<p class="mt-3 text-sm text-[var(--color-muted)] max-w-xl">
+				Kategoriler, ürünleri gruplamak için kullanılır. Tıklayarak adını, açıklamasını ve kapak görselini düzenleyebilirsin.
+			</p>
+		</div>
+		<a href="/categories/new" class="btn btn-primary">+ Yeni kategori</a>
+	</div>
 </header>
 
 <div class="px-10 py-8 max-w-4xl">
