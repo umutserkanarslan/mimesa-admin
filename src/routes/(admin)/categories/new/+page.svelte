@@ -51,10 +51,10 @@
 	<title>Yeni kategori · Mi Mesa Admin</title>
 </svelte:head>
 
-<header class="px-10 py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+<header class="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
 	<a href="/categories" class="text-xs text-[var(--color-muted)] hover:text-[var(--color-copper)]">← Kategoriler</a>
 	<p class="eyebrow mt-3">Yeni kategori</p>
-	<h1 class="mt-1 text-3xl">Menüye yeni bir başlık aç</h1>
+	<h1 class="mt-1 text-2xl sm:text-3xl">Menüye yeni bir başlık aç</h1>
 </header>
 
 <form
@@ -68,19 +68,19 @@
 			saving = false;
 		};
 	}}
-	class="px-10 py-8 max-w-4xl space-y-8"
+	class="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 max-w-4xl space-y-6 sm:space-y-8"
 >
 	<!-- Cover -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Kapak görseli</h2>
 		<input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif" class="input" />
 		<p class="mt-2 text-xs text-[var(--color-muted)]">Önerilen oran 4:5, max 8 MB. Boş bırakılırsa placeholder kullanılır.</p>
 	</section>
 
 	<!-- Slug + sort -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Temel</h2>
-		<div class="grid grid-cols-2 gap-4">
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 			<div>
 				<label class="label" for="slug">Slug *</label>
 				<input
@@ -119,9 +119,9 @@
 	/>
 
 	<!-- Name -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Ad *</h2>
-		<div class="grid grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="name_tr">TR</label>
 				<input id="name_tr" name="name_tr" bind:value={nameTr} required class="input" />
@@ -138,9 +138,9 @@
 	</section>
 
 	<!-- Tagline -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Tagline (italik) *</h2>
-		<div class="grid grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="tagline_tr">TR</label>
 				<input id="tagline_tr" name="tagline_tr" bind:value={taglineTr} required class="input" />
@@ -157,9 +157,9 @@
 	</section>
 
 	<!-- Description -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Açıklama *</h2>
-		<div class="grid grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="description_tr">TR</label>
 				<textarea id="description_tr" name="description_tr" rows="4" required class="textarea" bind:value={descriptionTr}></textarea>
@@ -181,7 +181,7 @@
 		</div>
 	{/if}
 
-	<div class="flex items-center gap-3">
+	<div class="flex items-center gap-3 flex-wrap">
 		<button type="submit" disabled={saving} class="btn btn-primary">
 			{saving ? 'Kaydediliyor…' : 'Kategori oluştur'}
 		</button>

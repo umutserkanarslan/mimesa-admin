@@ -40,10 +40,10 @@
 	<title>{item.name.tr} · Mi Mesa Admin</title>
 </svelte:head>
 
-<header class="px-10 py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+<header class="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
 	<a href="/items" class="text-xs text-[var(--color-muted)] hover:text-[var(--color-copper)]">← Ürünler</a>
 	<p class="eyebrow mt-3">Ürün · {item.slug}</p>
-	<h1 class="mt-1 text-3xl">{item.name.tr}</h1>
+	<h1 class="mt-1 text-2xl sm:text-3xl break-words">{item.name.tr}</h1>
 </header>
 
 <form
@@ -57,26 +57,26 @@
 			saving = false;
 		};
 	}}
-	class="px-10 py-8 max-w-4xl space-y-8"
+	class="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 max-w-4xl space-y-6 sm:space-y-8"
 >
 	<input type="hidden" name="flags" value={selectedFlags.join(',')} />
 
 	<!-- Image -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Görsel</h2>
-		<div class="flex items-start gap-6">
+		<div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
 			{#if item.image}
 				<img
 					src={item.image}
 					alt={item.name.tr}
-					class="w-32 h-32 object-cover bg-[var(--color-champagne-soft)] flex-shrink-0"
+					class="w-28 h-28 sm:w-32 sm:h-32 object-cover bg-[var(--color-champagne-soft)] flex-shrink-0"
 				/>
 			{:else}
-				<div class="w-32 h-32 bg-[var(--color-champagne-soft)] flex items-center justify-center text-xs text-[var(--color-muted)] flex-shrink-0">
+				<div class="w-28 h-28 sm:w-32 sm:h-32 bg-[var(--color-champagne-soft)] flex items-center justify-center text-xs text-[var(--color-muted)] flex-shrink-0">
 					Yok
 				</div>
 			{/if}
-			<div class="flex-1">
+			<div class="flex-1 w-full">
 				<label class="label" for="image">Yeni görsel (opsiyonel)</label>
 				<input id="image" type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif" class="input" />
 			</div>
@@ -84,9 +84,9 @@
 	</section>
 
 	<!-- Basics -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Temel</h2>
-		<div class="grid grid-cols-2 gap-4">
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 			<div>
 				<label class="label" for="category_slug">Kategori *</label>
 				<select id="category_slug" name="category_slug" required class="select">
@@ -116,9 +116,9 @@
 	/>
 
 	<!-- Name -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Ad *</h2>
-		<div class="grid grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="name_tr">TR</label>
 				<input id="name_tr" name="name_tr" bind:value={nameTr} required class="input" />
@@ -135,9 +135,9 @@
 	</section>
 
 	<!-- Description -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Açıklama *</h2>
-		<div class="grid grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<div>
 				<label class="label" for="description_tr">TR</label>
 				<textarea id="description_tr" name="description_tr" rows="4" required class="textarea" bind:value={descriptionTr}></textarea>
@@ -154,9 +154,9 @@
 	</section>
 
 	<!-- Price + flags -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<h2 class="text-lg mb-4">Fiyat ve etiketler</h2>
-		<div class="grid grid-cols-2 gap-6">
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 			<div>
 				<label class="label" for="price">Fiyat (₺) *</label>
 				<input id="price" type="number" name="price" value={item.price} min="0" step="1" required class="input" />
@@ -185,7 +185,7 @@
 	</section>
 
 	<!-- Publish -->
-	<section class="card p-6">
+	<section class="card p-4 sm:p-6">
 		<label class="flex items-center gap-3">
 			<input type="checkbox" name="is_published" checked={item.is_published} />
 			<span>
@@ -201,7 +201,7 @@
 		</div>
 	{/if}
 
-	<div class="flex items-center gap-3">
+	<div class="flex items-center gap-3 flex-wrap">
 		<button type="submit" disabled={saving} class="btn btn-primary">
 			{saving ? 'Kaydediliyor…' : 'Kaydet'}
 		</button>
@@ -224,9 +224,9 @@
 			deleting = false;
 		};
 	}}
-	class="px-10 pb-12 max-w-4xl"
+	class="px-4 sm:px-6 lg:px-10 pb-10 lg:pb-12 max-w-4xl"
 >
-	<div class="card p-6 border-l-2 border-[var(--color-danger)]">
+	<div class="card p-4 sm:p-6 border-l-2 border-[var(--color-danger)]">
 		<h3 class="text-sm">Tehlikeli bölge</h3>
 		<p class="text-xs text-[var(--color-muted)] mt-1">Ürünü kalıcı olarak siler ve görselini Storage'dan kaldırır.</p>
 		<button type="submit" disabled={deleting} class="btn btn-danger mt-4">

@@ -15,24 +15,24 @@
 	<title>Ürünler · Mi Mesa Admin</title>
 </svelte:head>
 
-<header class="px-10 py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+<header class="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
 	<div class="flex items-end justify-between gap-4 flex-wrap">
 		<div>
 			<p class="eyebrow">Ürünler</p>
-			<h1 class="mt-2 text-3xl">Tabaklar</h1>
+			<h1 class="mt-2 text-2xl sm:text-3xl">Tabaklar</h1>
 		</div>
 		<a href="/items/new" class="btn btn-primary">+ Yeni ürün</a>
 	</div>
 
-	<form method="GET" class="mt-6 flex items-center gap-3 flex-wrap">
+	<form method="GET" class="mt-6 flex items-center gap-2 sm:gap-3 flex-wrap">
 		<input
 			type="search"
 			name="q"
 			placeholder="Ara…"
 			value={data.search}
-			class="input max-w-xs"
+			class="input w-full sm:max-w-xs"
 		/>
-		<select name="category" class="select max-w-xs">
+		<select name="category" class="select w-full sm:max-w-xs">
 			<option value="">Tüm kategoriler</option>
 			{#each data.categories as c}
 				<option value={c.slug} selected={data.filter === c.slug}>{c.name.tr}</option>
@@ -45,9 +45,9 @@
 	</form>
 </header>
 
-<div class="px-10 py-8">
+<div class="px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
 	{#if data.items.length === 0}
-		<div class="card p-10 text-center text-[var(--color-muted)]">
+		<div class="card p-8 sm:p-10 text-center text-[var(--color-muted)]">
 			<p>Hiç ürün bulunamadı.</p>
 			<a href="/items/new" class="btn btn-secondary mt-4 inline-flex">Yeni ürün ekle</a>
 		</div>
@@ -56,23 +56,23 @@
 			{#each data.items as i (i.id)}
 				<a
 					href="/items/{i.slug}"
-					class="flex items-center gap-5 px-5 py-4 hover:bg-[var(--color-canvas)] transition-colors"
+					class="flex items-center gap-3 sm:gap-5 px-3 sm:px-5 py-3 sm:py-4 hover:bg-[var(--color-canvas)] transition-colors"
 				>
 					{#if i.image}
 						<img
 							src={i.image}
 							alt={i.name.tr}
-							class="w-16 h-16 object-cover bg-[var(--color-champagne-soft)] flex-shrink-0"
+							class="w-14 h-14 sm:w-16 sm:h-16 object-cover bg-[var(--color-champagne-soft)] flex-shrink-0"
 							loading="lazy"
 						/>
 					{:else}
-						<div class="w-16 h-16 bg-[var(--color-champagne-soft)] flex items-center justify-center text-xs text-[var(--color-muted)] flex-shrink-0">
+						<div class="w-14 h-14 sm:w-16 sm:h-16 bg-[var(--color-champagne-soft)] flex items-center justify-center text-xs text-[var(--color-muted)] flex-shrink-0">
 							—
 						</div>
 					{/if}
 					<div class="flex-1 min-w-0">
 						<div class="flex items-center gap-2 flex-wrap">
-							<p style="font-family:var(--font-display);font-weight:400;font-size:1.05rem;line-height:1.2;">
+							<p class="truncate" style="font-family:var(--font-display);font-weight:400;font-size:1.05rem;line-height:1.2;">
 								{i.name.tr}
 							</p>
 							{#if !i.is_published}
@@ -87,7 +87,7 @@
 						</p>
 					</div>
 					<div class="text-right text-sm flex-shrink-0">
-						<p style="font-family:var(--font-display);font-style:italic;color:var(--color-copper);">
+						<p class="whitespace-nowrap" style="font-family:var(--font-display);font-style:italic;color:var(--color-copper);">
 							{formatPrice(i.price)}
 						</p>
 					</div>
