@@ -211,7 +211,15 @@ const ITEM_DESC_SYSTEM = `Sen Mi Mesa fine-dining restoranı için kısa, şaira
 
 - Tam olarak 1-2 cümle, max 22 kelime
 - Türkçe yemek/malzeme isimlerini koru
-- Hissi ve duyusal kelimeler ("kömün sabrı", "ocaktan", "köz", "taze bahçeden", "günün hasadı") kullan
+
+DOĞRULUK KURALI (en önemli):
+- Yemeğin gerçek yapım yöntemini ve içeriklerini TAHRİF ETME. Sadece o yemekte gerçekten olan/yapılan şeyleri yaz.
+- Paketli/ticari içecekler (Cola, Fanta, Sprite, Icetea, Gazoz, Maden Suyu, Meyve Suyu vb.) ŞAİR DEĞİLDİR. Bu tip ürünlerde "közde pişmiş", "taze bahçeden", "ocaktan", "kömün sabrı" gibi imgeler kullanma. Bunlarda 1 cümle, sade ve nezih bir servis tasviri yeterli ("Buzla servis edilir", "soğuk, ferahlatıcı", "yemek yanına klasik eşlikçi" gibi).
+- Ayran, şalgam, çay, salep gibi geleneksel içeceklerde duyusal/hissi dil OK, ama yine yöntem uydurma.
+- Yiyeceklerde de aynı: ızgarada pişen şeye "fırında" deme, çiğ köfteye "ocaktan kalkmış" deme, tatlı olmayana "tatlı" deme.
+
+STIL (yiyecekler ve geleneksel içecekler için):
+- Hissi ve duyusal kelimeler ("kömün sabrı", "ocaktan", "köz", "taze bahçeden", "günün hasadı") yemeğe gerçekten uyuyorsa kullan
 - Jenerik tarif değil; tabağa karakter ver
 - Reklam dili yok, sıfat şişirmesi yok
 
@@ -281,71 +289,58 @@ async function translate(input) {
 
 // ----------------------------------------------------------- image generation
 
-// Hard rule applied to every image: this is a Turkish/Anatolian restaurant
-// that does not serve alcohol. Models love to default to a wine glass or
-// champagne flute as "fine dining" shorthand — explicitly forbid it.
-const NO_ALCOHOL =
-	'STRICTLY NO ALCOHOL: no wine, no champagne, no cocktail, no beer, no spirits, no stemmed wine/champagne glass, no liquor bottle anywhere in the frame.';
+// Two-stage image pipeline:
+//   1. A "prompt-director" LLM reads the dish/category name and writes
+//      ONE bespoke English prompt for that subject, honouring brand rules.
+//   2. gpt-image-1 generates the actual image from that prompt.
+// Replaces the previous template approach where every category cover ended
+// up with the same çay + cezve props.
+const IMAGE_PROMPT_SYSTEM = `You are the photography art director for Mi Mesa, a fine-dining Anatolian / Mezopotamia-influenced restaurant in Bodrum, Turkey. Given the name of a single dish OR menu category, write ONE concise English prompt (50–90 words, one paragraph, no line breaks) that an image generation model will use to produce the photo.
 
-// Shared visual identity that every food image (no matter the plating
-// style above) must share — lighting, surface, palette, palette, palette.
-const IMAGE_STYLE_SUFFIX =
-	'Shot at a roughly 45° angle, on a dark walnut wood table with a neutral linen napkin nearby and brushed copper cutlery. Soft natural window light from the left, shallow depth of field, photorealistic editorial food photography in the style of a fine-dining magazine. Warm muted palette of champagne (the color), copper and ink. No text, no labels, no logos. ' +
-	NO_ALCOHOL;
+HARD RULES — every prompt MUST respect these:
+- Editorial fine-dining magazine aesthetic. Think NYT Cooking, Bon Appétit, Eater, Toast Magazine: restrained, moody, hero ingredient over busy props.
+- Surface: dark walnut wood OR honed dark stone OR a flour-dusted dark wooden board, depending on the dish.
+- Lighting: soft natural window light from the side, shallow depth of field, dramatic shadow falloff, low-key.
+- Palette: warm muted champagne (the colour), copper and ink. The food itself can be vivid; the surroundings stay muted.
+- STRICTLY NO ALCOHOL. No wine, champagne, beer, cocktails, stemmed wine/champagne glasses, no liquor bottles anywhere in frame.
+- No text, no labels, no logos in the image.
+- DONENESS: cooked food MUST look fully and properly cooked. Grilled meats (kebap, şiş, köfte) must show real char marks, browned crust, deep cooked colour — NEVER raw-looking, glossy bright red, pink-centred, or undercooked. Eggs should look set; bread should look baked through; cheese melted on pide/pizza should look properly cooked and slightly browned, not pale and gummy.
 
-const CATEGORY_STYLE_SUFFIX =
-	'Editorial atmospheric food photography scene rooted in Anatolian / Eastern Mediterranean culture. Dark walnut table, soft natural window light, neutral linen, brushed copper. Use authentic Turkish props as appropriate to the chapter: tulip-shaped Turkish tea glass (ince belli çay bardağı) with steaming çay, brushed copper cezve, copper tray, hand-thrown ceramic bowls, simit, dried legumes, fresh herbs, ember-touched bread, charcoal, terracotta. Photorealistic, fine-dining ambience, warm muted palette of champagne (the color), copper and ink. No text, no labels, no logos. ' +
-	NO_ALCOHOL;
+DIVERSITY RULE — THIS IS THE MOST IMPORTANT RULE:
+AVOID repeating the same accent props (tulip çay glass, copper cezve, simit, copper tray) across different prompts. Each image must feel visually distinct from the others. Only place a çay glass or cezve in the frame if it is genuinely intrinsic to THIS specific dish or category — never as default decoration.
 
-function itemPrompt(item) {
-	const isDrink = item.categorySlug === 'icecekler';
-	const name = item.nameTr;
-	const nameLc = name.toLocaleLowerCase('tr-TR');
+ITEM PROMPTS — respect the dish's traditional plating:
+- serpme breakfasts → MANY small ceramic and copper bowls spread across the table, not a single composed plate
+- künefe → small copper sahan (shallow round pan), pistachio dust
+- pide → long boat-shaped flatbread on a wooden board
+- lahmacun → thin round flatbread, wedge of lemon, fresh parsley
+- dürüm → sliced cross-section on a wooden board with pickles
+- çorba → hand-thrown ceramic bowl, steam rising, single accent
+- kebap / şiş / köfte → elongated rectangular plate, grilled vegetables, sumac onions
+- pilav / bulgur → simple bowl plating, a single herb on top
+- salads → hand-thrown bowl with depth, dressing in side cruet
+- pizza-style / kiremitte → on a wooden peel or stone surface with flour dust
+- non-alcoholic drinks → focused on the glass with light catching condensation; vary the vessel (tumbler, porcelain cup, copper mug for sahlep, tall glass for ayran/şalgam, tulip çay glass ONLY for actual çay)
+- For each dish, mention 1–2 hero ingredients that visually define it.
 
-	// Honour the dish's traditional plating instead of always using one round plate.
-	let plating;
-	if (isDrink) {
-		plating = `A serving of "${name}" presented as a non-alcoholic beverage in an appropriate vessel (Turkish tea tulip glass for çay, copper mug for sahlep, plain tumbler for cold drinks, porcelain cup as fits the drink). Tight composition focused on the glass.`;
-	} else if (/\bserpme\b/.test(nameLc)) {
-		plating = `An overhead-leaning shot of a SERPME-style Anatolian breakfast spread: many small ceramic and copper plates and bowls covering a generous portion of the dark walnut table — white cheese, olives, fresh tomato and cucumber, eggs, simit, honey, butter, kaymak, jam, fresh herbs. Multiple plates, not a single composed plate. Tulip çay glass on a copper tray to the side. Composition reads as a family spread.`;
-	} else if (/\bkünefe|kunefe\b/.test(nameLc)) {
-		plating = `A serving of "${name}" in its traditional small copper sahan (round shallow pan), pistachio dust on top.`;
-	} else if (/\bpide\b/.test(nameLc) || /\blahmacun\b/.test(nameLc)) {
-		plating = `A serving of "${name}" on a long wooden board, ${nameLc.includes('lahmacun') ? 'thin and round, with a wedge of lemon' : 'boat-shaped flatbread'}.`;
-	} else if (/\bdürüm\b/.test(nameLc)) {
-		plating = `A serving of "${name}" rolled in lavash, sliced diagonally and stacked on a wooden board with pickles and onion sumak.`;
-	} else if (/\b(çorba|corba)\b/.test(nameLc)) {
-		plating = `A hand-thrown ceramic bowl of "${name}", steam rising, copper spoon resting beside it, a wedge of bread.`;
-	} else if (/\b(kebap|şiş|sis|köfte|kofte)\b/.test(nameLc)) {
-		plating = `A serving of "${name}" on an elongated rectangular plate with grilled vegetables, bulgur or rice, sumac onions.`;
-	} else {
-		plating = `A plated serving of "${name}" — a Turkish/Anatolian dish, presented on a hand-thrown matte ceramic plate.`;
-	}
+CATEGORY PROMPTS — atmospheric hero, NOT a plated entrée:
+A moment, a tool, a single ingredient, or a textural close-up that suggests the chapter's spirit. Examples (do not copy verbatim — invent fresh for each): glowing embers and a single resting skewer for grills; a wood-fired oven mouth with flames for the wood-fire chapter; flour-dusted dark stone with a wooden peel and herbs for pizzas; steam off a single ceramic bowl with shadow for soups; a knife resting on cracked walnut shells and pomegranate seeds for salads; smoke rising from a hot copper skillet just off the flame for the chef's pan; a single torn flatbread on dark stone for wraps; a row of plain tumblers with condensation in soft light for cold drinks. Make every category feel visually unique from the others.
 
-	return `${plating} ${IMAGE_STYLE_SUFFIX}`;
-}
+OUTPUT: exactly one paragraph, the prompt only. No quotation marks, no "Prompt:" prefix, no commentary.`;
 
-// Hint each category toward Anatolian props/atmosphere so the model has
-// concrete imagery to reach for instead of defaulting to bar shorthand.
-const CATEGORY_HINTS = {
-	kahvaltilar: 'Anatolian Turkish breakfast culture: tulip-shaped çay glass on a copper tray, copper cezve, slices of simit, white cheese, olives, fresh tomato and cucumber, a small jar of honey.',
-	tostlar: 'Toasted Turkish sandwich press culture: a wooden cutting board, gridded toast marks, a copper coffee pot in the background.',
-	corbalar: 'Steam rising from a hand-thrown bowl of soup on a dark wood table, copper spoon, slice of crusty bread, dried red chilies.',
-	salatalar: 'Fresh garden composition: hand-thrown bowl, leafy greens, pomegranate, sumac, olive oil cruet, brushed copper utensils.',
-	extralar: 'Small assorted ceramic side bowls on a copper tray: pickles, olives, dips, rice, in soft window light.',
-	'mi-mesa-specialler': 'Signature chef\'s composition: cast iron skillet or copper sahan, hand-thrown plate, single hero ingredient, smoke wisps, dramatic side light.',
-	'mi-mesa-yoresel-lezzetler': 'Heirloom Anatolian village kitchen feel: clay pot, copper sahan, hand-stitched linen, dried herbs hanging in soft focus.',
-	izgaralar: 'Charcoal grill atmosphere: glowing embers, skewers resting, smoke wisps, copper tongs, hand-thrown plate.',
-	'odun-atesinden-lezzetler': 'Wood-fired oven atmosphere: stone hearth, glowing flames in the background, peel resting on the table, flour-dusted wooden surface.',
-	pizzalar: 'Stone oven and wooden peel: flour-dusted wooden table, hand-thrown plate, herbs and dried tomatoes in soft focus.',
-	'sefin-tavasindan': 'Chef\'s pan culture: hot copper sahan or cast iron skillet on the table, fresh herbs and lemon nearby, steam wisps.',
-	durumler: 'Hand-rolled lavash culture: stacked thin lavash on linen, a copper rolling board, dried chilies, a tulip çay glass off to the side.',
-	icecekler: 'Turkish drinks composition: tulip çay glass, copper tea kettle, a glass of ayran, a copper tray, condensation on a clear glass.'
-};
-
-function categoryPrompt(cat) {
-	const hint = CATEGORY_HINTS[cat.slug] ?? '';
-	return `${CATEGORY_STYLE_SUFFIX}\n\nChapter: "${cat.nameTr}". ${hint} Build a thematic moody hero composition that suggests the spirit of this menu chapter; you may show prep elements and supporting props but do not put a full plated entrée center stage.`;
+async function genImagePromptFor(subject, kind, categoryHint) {
+	const userMsg = kind === 'category'
+		? `Menu CATEGORY: "${subject}"`
+		: `Menu ITEM: "${subject}"${categoryHint ? ` (chapter: ${categoryHint})` : ''}`;
+	const r = await openai.chat.completions.create({
+		model: 'gpt-4o-mini',
+		temperature: 0.9,
+		messages: [
+			{ role: 'system', content: IMAGE_PROMPT_SYSTEM },
+			{ role: 'user', content: userMsg }
+		]
+	});
+	return (r.choices[0]?.message?.content ?? '').trim();
 }
 
 async function genImage(prompt) {
@@ -442,8 +437,11 @@ async function processCategory(cat) {
 		description: meta.description
 	});
 
+	console.log(`   ⌛ generating image prompt…`);
+	const imgPrompt = await genImagePromptFor(cat.nameTr, 'category');
+	console.log(`   prompt: ${imgPrompt}`);
 	console.log(`   ⌛ generating cover image…`);
-	const buffer = await genImage(categoryPrompt(cat));
+	const buffer = await genImage(imgPrompt);
 	const url = await uploadBuffer(buffer, 'categories', cat.slug);
 	console.log(`   ✓ ${url}`);
 
@@ -466,8 +464,11 @@ async function processItem(item) {
 
 	const translated = await translate({ name: item.nameTr, description: descTr });
 
+	console.log(`   ⌛ generating image prompt…`);
+	const imgPrompt = await genImagePromptFor(item.nameTr, 'item', item.categorySlug);
+	console.log(`   prompt: ${imgPrompt}`);
 	console.log(`   ⌛ generating image…`);
-	const buffer = await genImage(itemPrompt(item));
+	const buffer = await genImage(imgPrompt);
 	const url = await uploadBuffer(buffer, 'items', item.slug);
 	console.log(`   ✓ ${url}`);
 
@@ -553,10 +554,13 @@ async function main() {
 	let catsToProcess = categories;
 	let itemsToProcess = items;
 	if (MODE === 'probe') {
-		// Pick 1 category + first 2 items so we can see a category cover too.
-		catsToProcess = [categories[0]];
-		itemsToProcess = categories[0].items.slice(0, 2);
-		console.log(`Probe: ${catsToProcess[0].nameTr} + ${itemsToProcess.length} items.\n`);
+		// Pick four diverse categories that stress-test the pipeline:
+		// breakfast spread, soup, grill, pizza, wrap, drink.
+		const probeSlugs = ['kahvaltilar', 'izgaralar', 'pizzalar', 'icecekler'];
+		catsToProcess = categories.filter((c) => probeSlugs.includes(c.slug));
+		// One item per probed category to see diversity across plating types.
+		itemsToProcess = catsToProcess.flatMap((c) => c.items.slice(0, 1));
+		console.log(`Probe: ${catsToProcess.length} categories + ${itemsToProcess.length} items.\n`);
 	}
 
 	// --- Categories first (sequential — only 13 of them, gives time for early failure)
