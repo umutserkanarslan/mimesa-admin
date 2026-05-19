@@ -19,6 +19,9 @@ export interface DbItem {
 	name: Translated;
 	description: Translated;
 	price: number;
+	price_label: string | null;
+	price_alt: number | null;
+	price_alt_label: string | null;
 	currency: string;
 	image: string | null;
 	flags: string[];

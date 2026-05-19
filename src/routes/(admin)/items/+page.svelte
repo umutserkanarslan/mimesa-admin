@@ -6,6 +6,10 @@
 		return new Intl.NumberFormat('tr-TR', { style: 'decimal', maximumFractionDigits: 0 }).format(p) + ' ₺';
 	}
 
+	function priceDisplay(i: { price: number; price_alt: number | null }) {
+		return i.price_alt != null ? `${formatPrice(i.price)} / ${formatPrice(i.price_alt)}` : formatPrice(i.price);
+	}
+
 	function categoryName(slug: string) {
 		return data.categories.find((c) => c.slug === slug)?.name.tr ?? slug;
 	}
@@ -88,7 +92,7 @@
 					</div>
 					<div class="text-right text-sm flex-shrink-0">
 						<p class="whitespace-nowrap" style="font-family:var(--font-display);font-style:italic;color:var(--color-copper);">
-							{formatPrice(i.price)}
+							{priceDisplay(i)}
 						</p>
 					</div>
 				</a>

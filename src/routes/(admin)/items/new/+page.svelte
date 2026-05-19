@@ -189,6 +189,25 @@
 		</div>
 
 		<div class="mt-5">
+			<p class="label !mb-2">İkinci fiyat (opsiyonel)</p>
+			<p class="text-xs text-[var(--color-muted)] mb-3">Az/Tam ya da 1 / 1.5 Porsiyon gibi iki seçenekli ürünlerde doldur. Boş bırakırsan menüde tek fiyat gösterilir.</p>
+			<div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+				<div>
+					<label class="label" for="price_label">1. etiket</label>
+					<input id="price_label" name="price_label" value={f.price_label ?? ''} placeholder="Az" class="input" />
+				</div>
+				<div>
+					<label class="label" for="price_alt_label">2. etiket</label>
+					<input id="price_alt_label" name="price_alt_label" value={f.price_alt_label ?? ''} placeholder="Tam" class="input" />
+				</div>
+				<div class="sm:col-span-2">
+					<label class="label" for="price_alt">2. fiyat (₺)</label>
+					<input id="price_alt" type="number" name="price_alt" value={f.price_alt ?? ''} min="0" step="1" class="input" />
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-5">
 			<span class="label">Etiketler</span>
 			<div class="flex flex-wrap gap-2">
 				{#each flagOptions as flag}

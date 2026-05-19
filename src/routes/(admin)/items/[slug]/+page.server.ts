@@ -34,6 +34,9 @@ export const actions: Actions = {
 		const description = tr(form, 'description');
 		const categorySlug = String(form.get('category_slug') ?? '').trim();
 		const price = Number(form.get('price') ?? 0);
+		const priceLabelRaw = String(form.get('price_label') ?? '').trim();
+		const priceAltRaw = String(form.get('price_alt') ?? '').trim();
+		const priceAltLabelRaw = String(form.get('price_alt_label') ?? '').trim();
 		const flags = String(form.get('flags') ?? '')
 			.split(',')
 			.map((s) => s.trim())
@@ -49,11 +52,30 @@ export const actions: Actions = {
 			}
 		}
 
+		let priceAlt: number | null = null;
+		let priceLabel: string | null = null;
+		let priceAltLabel: string | null = null;
+		if (priceAltRaw) {
+			const n = Number(priceAltRaw);
+			if (!Number.isFinite(n) || n <= 0) return fail(400, { error: 'İkinci fiyat geçerli değil.' });
+			if (!priceLabelRaw || !priceAltLabelRaw) {
+				return fail(400, { error: 'İki fiyat girdiysen her ikisinin de etiketini gir (ör. Az / Tam).' });
+			}
+			priceAlt = n;
+			priceLabel = priceLabelRaw;
+			priceAltLabel = priceAltLabelRaw;
+		} else if (priceLabelRaw || priceAltLabelRaw) {
+			return fail(400, { error: 'Etiket girdiysen ikinci fiyatı da gir.' });
+		}
+
 		const update: Record<string, unknown> = {
 			category_slug: categorySlug,
 			name,
 			description,
 			price,
+			price_label: priceLabel,
+			price_alt: priceAlt,
+			price_alt_label: priceAltLabel,
 			flags,
 			sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
 			is_published: isPublished

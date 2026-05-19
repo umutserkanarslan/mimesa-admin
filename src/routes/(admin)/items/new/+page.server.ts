@@ -33,6 +33,9 @@ export const actions: Actions = {
 		const slug = slugInput || slugify(name.tr);
 		const categorySlug = String(form.get('category_slug') ?? '').trim();
 		const price = Number(form.get('price') ?? 0);
+		const priceLabelRaw = String(form.get('price_label') ?? '').trim();
+		const priceAltRaw = String(form.get('price_alt') ?? '').trim();
+		const priceAltLabelRaw = String(form.get('price_alt_label') ?? '').trim();
 		const flags = String(form.get('flags') ?? '')
 			.split(',')
 			.map((s) => s.trim())
@@ -49,6 +52,22 @@ export const actions: Actions = {
 			if (!v.tr || !v.en || !v.ar) {
 				return fail(400, { ...fields, error: 'Tüm dillerde doldurulması gereken alanlar var.' });
 			}
+		}
+
+		let priceAlt: number | null = null;
+		let priceLabel: string | null = null;
+		let priceAltLabel: string | null = null;
+		if (priceAltRaw) {
+			const n = Number(priceAltRaw);
+			if (!Number.isFinite(n) || n <= 0) return fail(400, { ...fields, error: 'İkinci fiyat geçerli değil.' });
+			if (!priceLabelRaw || !priceAltLabelRaw) {
+				return fail(400, { ...fields, error: 'İki fiyat girdiysen her ikisinin de etiketini gir (ör. Az / Tam).' });
+			}
+			priceAlt = n;
+			priceLabel = priceLabelRaw;
+			priceAltLabel = priceAltLabelRaw;
+		} else if (priceLabelRaw || priceAltLabelRaw) {
+			return fail(400, { ...fields, error: 'Etiket girdiysen ikinci fiyatı da gir.' });
 		}
 
 		// Check slug uniqueness
@@ -75,6 +94,9 @@ export const actions: Actions = {
 			name,
 			description,
 			price,
+			price_label: priceLabel,
+			price_alt: priceAlt,
+			price_alt_label: priceAltLabel,
 			currency: 'TRY',
 			image,
 			flags,
