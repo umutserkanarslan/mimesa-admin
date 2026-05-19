@@ -29,7 +29,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXCEL_PATH = path.resolve(HERE, '..', 'Mi_Mesa_Menu.xlsx');
 const STORAGE_BUCKET = 'menu-images';
 const IMAGE_QUALITY = 'medium'; // 'low' | 'medium' | 'high'
-const IMAGE_CONCURRENCY = 3;
+const IMAGE_CONCURRENCY = 2; // OpenAI gpt-image-1 tier 1 caps at 5 images/min;
+                              // 2 parallel + SDK retries stays comfortably under it.
 
 const SUPABASE_URL = process.env.PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -41,12 +42,21 @@ if (!SUPABASE_URL || !SUPABASE_KEY || !OPENAI_KEY) {
 }
 
 const args = new Set(process.argv.slice(2));
-const MODE = args.has('--commit') ? 'commit' : args.has('--probe') ? 'probe' : 'dry-run';
+const MODE = args.has('--resume')
+	? 'resume'
+	: args.has('--commit')
+		? 'commit'
+		: args.has('--probe')
+			? 'probe'
+			: 'dry-run';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 	auth: { autoRefreshToken: false, persistSession: false }
 });
-const openai = new OpenAI({ apiKey: OPENAI_KEY });
+// maxRetries: OpenAI SDK does exponential backoff on 429/5xx; bump it up so
+// transient rate-limit spikes from gpt-image-1 (5 images/min on tier 1)
+// don't drop items.
+const openai = new OpenAI({ apiKey: OPENAI_KEY, maxRetries: 8 });
 
 // -------------------------------------------------------------- slugify
 
@@ -537,6 +547,30 @@ async function main() {
 		}
 		console.log('\nDry run complete. No DB writes, no API calls, no charges.');
 		console.log('\nNext: node --env-file=.env scripts/bulk-import.mjs --probe');
+		return;
+	}
+
+	// --- RESUME: process only items missing from DB (e.g. ones that hit a 429
+	// during the original --commit). No wipe; no category re-runs.
+	if (MODE === 'resume') {
+		const { data: existing, error: existingErr } = await supabase
+			.from('items')
+			.select('slug');
+		if (existingErr) throw new Error(`Failed to read items: ${existingErr.message}`);
+		const have = new Set((existing ?? []).map((r) => r.slug));
+		const missing = items.filter((it) => !have.has(it.slug));
+		console.log(`Resume: ${missing.length} items missing from DB. Processing those.\n`);
+		if (missing.length === 0) {
+			console.log('Nothing to do.');
+			return;
+		}
+		const errors = await withConcurrency(missing, IMAGE_CONCURRENCY, processItem);
+		console.log(`\n${'='.repeat(60)}`);
+		console.log(`✓ ${missing.length - errors.length} items inserted, ${errors.length} failed.`);
+		if (errors.length > 0) {
+			console.log('\nStill failing — run --resume again or fix manually:');
+			for (const { item, err } of errors) console.log(`  - ${item.slug}: ${err.message}`);
+		}
 		return;
 	}
 
